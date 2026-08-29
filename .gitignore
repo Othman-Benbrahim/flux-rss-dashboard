@@ -1,0 +1,13 @@
+# Identifiants — ne jamais versionner
+config.local.php
+
+# Fichiers téléversés
+uploads/*
+!uploads/.htaccess
+!uploads/backgrounds/
+uploads/backgrounds/*
+!uploads/backgrounds/.htaccess
+
+# Divers
+.DS_Store
+*.log

@@ -1,0 +1,14 @@
+# Refuse l'accès direct aux fichiers qui ne sont pas des points d'entrée.
+<FilesMatch "^(config\.php|config\.local\.php|config\.local\.example\.php|db\.php|lib_.*\.php|migrate\.php|.*\.sql|\.gitignore)$">
+    Require all denied
+</FilesMatch>
+
+# Pas d'index de répertoire.
+Options -Indexes
+
+# En-têtes de sécurité de base.
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

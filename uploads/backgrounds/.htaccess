@@ -1,0 +1,20 @@
+# Le dossier des envois ne doit jamais exécuter de code.
+#
+# Note : pas de directive php_flag ici. PHP tourne en FastCGI derrière Apache
+# chez alwaysdata, mod_php n'est pas chargé, et php_flag provoquerait une
+# erreur 500 (« Invalid command 'php_flag' ») sur tout le dossier.
+
+# 1. Aucun handler d'exécution sur ces extensions.
+RemoveHandler .php .phtml .php3 .php4 .php5 .php7 .php8 .phar .cgi .pl .py
+RemoveType .php .phtml .php3 .php4 .php5 .php7 .php8 .phar
+
+# 2. Servi comme texte brut si le fichier passe malgré tout.
+AddType text/plain .php .phtml .phar .cgi .pl .py .sh
+
+# 3. Refus pur et simple de l'accès à ces fichiers.
+<FilesMatch "\.(?i:php|phtml|phar|php[0-9]|cgi|pl|py|sh|htaccess|htpasswd)$">
+    Require all denied
+</FilesMatch>
+
+# 4. Pas de listage, pas de CGI, pas de réécriture héritée.
+Options -Indexes -ExecCGI
