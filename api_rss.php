@@ -59,6 +59,43 @@ if (!in_array($requested, registered_feed_urls($pdo, $owner), true)) {
 // Une adresse saisie sans schéma (« lemonde.fr ») est complétée en https.
 $feed_url = preg_match('~^https?://~i', $requested) ? $requested : 'https://' . $requested;
 
+/**
+ * Une page Apple Podcasts n'est pas un flux et n'en déclare aucun : la
+ * découverte automatique n'a rien à s'y accrocher. L'API Lookup d'Apple,
+ * publique et sans clé, renvoie l'adresse du flux d'origine à partir de
+ * l'identifiant numérique présent dans l'URL.
+ *
+ * La requête passe par safe_fetch : les protections réseau s'appliquent.
+ */
+function resolve_apple_podcast(string $url): string
+{
+    $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+
+    if ($host !== 'podcasts.apple.com' && $host !== 'itunes.apple.com') {
+        return $url;
+    }
+    if (!preg_match('~/id(\d+)~', $url, $matches)) {
+        return $url;
+    }
+
+    try {
+        [$body, $code] = safe_fetch('https://itunes.apple.com/lookup?id=' . $matches[1] . '&entity=podcast');
+    } catch (HttpFetchException $e) {
+        return $url;
+    }
+
+    if ($code !== 200) {
+        return $url;
+    }
+
+    $data = json_decode($body, true);
+    $found = $data['results'][0]['feedUrl'] ?? '';
+
+    return (is_string($found) && preg_match('~^https?://~i', $found)) ? $found : $url;
+}
+
+$feed_url = resolve_apple_podcast($feed_url);
+
 // ---------------------------------------------------------------------------
 // 2. Cache
 // ---------------------------------------------------------------------------
@@ -256,7 +293,26 @@ foreach ($entries as $entry) {
         $imageUrl = '';
     }
 
-    $link = isset($entry->link['href']) ? (string) $entry->link['href'] : (string) $entry->link;
+    $link = isset($entry->link['href'])
+        ? (string) $entry->link['href']          // Atom
+        : trim((string) $entry->link);           // RSS 2.0
+
+    // Beaucoup de flux de podcasts omettent <link> dans leurs items et
+    // n'exposent qu'un <guid> qui est déjà une adresse. Sans ce repli, tous
+    // les épisodes se retrouvaient sans lien et étaient écartés à l'affichage.
+    if (!preg_match('~^https?://~i', $link) && isset($entry->guid)) {
+        $candidate = trim((string) $entry->guid);
+
+        // isPermaLink="false" signale explicitement un identifiant qui n'est
+        // pas une adresse : on ne s'en sert pas comme lien.
+        $isPermaLink = !isset($entry->guid['isPermaLink'])
+            || strtolower(trim((string) $entry->guid['isPermaLink'])) !== 'false';
+
+        if ($isPermaLink && preg_match('~^https?://~i', $candidate)) {
+            $link = $candidate;
+        }
+    }
+
     if (!preg_match('~^https?://~i', $link)) {
         $link = '';
     }

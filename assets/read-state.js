@@ -113,7 +113,8 @@
      */
     document.addEventListener('click', function (event) {
         var link = event.target.closest('.rss-title-link');
-        if (!link || !isLoggedIn) return;
+        // Un épisode sans lien est rendu en <span> : rien à marquer.
+        if (!link || !isLoggedIn || link.tagName !== 'A') return;
 
         var href = link.getAttribute('href');
         if (!href || !/^https?:\/\//i.test(href)) return;

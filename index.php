@@ -1480,7 +1480,17 @@ $has_owner    = owner_id($pdo) !== null;
                                 const duration   = esc(item.duration || '');
                                 const readClass  = item.read ? ' rss-read' : '';
 
-                                if (!link) return; // un article sans adresse exploitable est ignoré
+                                // Un épisode de podcast n'a souvent ni lien d'article ni page
+                                // dédiée : il reste écoutable, donc on l'affiche. On n'écarte
+                                // que ce qui n'offre ni lien ni audio.
+                                if (!link && !audioUrl) return;
+
+                                // Sans lien, le titre reste un simple texte : un <a href="">
+                                // vide rechargerait la page au clic.
+                                const openAttrs = link
+                                    ? `href="${link}" target="_blank" rel="noopener noreferrer"`
+                                    : 'role="text"';
+                                const titleTag = link ? 'a' : 'span';
 
                                 if (widgetMode === 'photos' || widgetMode === 'single') {
                                     const w = widgetMode === 'single' ? '100%' : '80px';
@@ -1490,17 +1500,17 @@ $has_owner    = owner_id($pdo) !== null;
                                         ? `<img src="${imgUrl}" alt="" style="width: ${w}; height: ${h}; object-fit: cover; border-radius: 4px; opacity:0.9;">`
                                         : feedPlaceholder(widgetData.settings.url, title, widgetMode === 'single' ? 220 : 80, widgetMode === 'single' ? 140 : 60);
 
-                                    rssHtml += `<a href="${link}" target="_blank" rel="noopener noreferrer" title="${title}" class="rss-title-link rss-photo-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}" style="display:inline-block; margin:2px; width:${widgetMode==='single'?'100%':'auto'};">
+                                    rssHtml += `<${titleTag} ${openAttrs} title="${title}" class="rss-title-link rss-photo-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}" style="display:inline-block; margin:2px; width:${widgetMode==='single'?'100%':'auto'};">
                                                   ${visual}
-                                                </a>`;
+                                                </${titleTag}>`;
                                 } else {
                                     const imagePart = imgUrl
                                         ? `<img src="${imgUrl}" alt="" style="width: 45px; height: 35px; object-fit: cover; border-radius: 3px; opacity:0.9;">`
                                         : feedPlaceholder(widgetData.settings.url, title, 45, 35);
 
                                     const textPart = displayType === 'titles'
-                                        ? `<a href="${link}" target="_blank" rel="noopener noreferrer" class="rss-title-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}" style="line-height:35px; display:block;">${title}</a>`
-                                        : `<a href="${link}" target="_blank" rel="noopener noreferrer" class="rss-title-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}">${title}</a>
+                                        ? `<${titleTag} ${openAttrs} class="rss-title-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}" style="line-height:35px; display:block;">${title}</${titleTag}>`
+                                        : `<${titleTag} ${openAttrs} class="rss-title-link${readClass}" data-summary="${summary}" data-image="${imgUrl}" data-date="${dateAttr}">${title}</${titleTag}>
                                            <div style="font-size: 11px; color: #777; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${summary}</div>`;
 
                                     const audioPart = audioUrl
