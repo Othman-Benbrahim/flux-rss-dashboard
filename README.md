@@ -1,5 +1,8 @@
 # Flux RSS — tableau de bord personnel
 
+<img width="1886" height="901" alt="Firefox_Screenshot_2026-09-03T07-37-24 043Z" src="https://github.com/user-attachments/assets/c4a29ba2-ceed-42a2-9107-5faea568f56b" />
+
+
 Une page de démarrage à widgets, dans l'esprit de Protopage : des flux RSS, des
 favoris, des notes et des widgets libres, organisés en onglets et disposés au
 glisser-déposé.
